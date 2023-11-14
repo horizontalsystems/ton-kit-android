@@ -1,6 +1,7 @@
 package io.horizontalsystems.tonkit
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.ton.api.liteclient.config.LiteClientConfigGlobal
 import org.ton.bitstring.BitString
@@ -24,10 +25,10 @@ class TonApiAdnl(private val addrStd: AddrStd) {
 
     init {
         try {
-            val config = json.decodeFromString(
-                LiteClientConfigGlobal.serializer(),
+            val configJson = runBlocking(Dispatchers.Default) {
                 URL("https://ton.org/global.config.json").readText()
-            )
+            }
+            val config = json.decodeFromString(LiteClientConfigGlobal.serializer(), configJson)
             liteClient = LiteClient(Dispatchers.Default, config)
         } catch (e: Exception) {
 
