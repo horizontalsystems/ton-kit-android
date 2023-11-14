@@ -3,13 +3,20 @@ package io.horizontalsystems.tonkit
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.horizontalsystems.tonkit.ui.theme.TonKitTheme
 
 class MainActivity : ComponentActivity() {
@@ -17,30 +24,50 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             TonKitTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Greeting("Android")
-                }
+                MainScreen()
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainScreen() {
+    val viewModel = viewModel<MainViewModel>()
+    val uiState = viewModel.uiState
+    val address = viewModel.address
+    val transactionList = viewModel.transactionList
+
+    Scaffold {
+        Column(
+            modifier = Modifier
+                .padding(it)
+                .padding(16.dp)
+        ) {
+            Text(text = "Address: $address")
+            Text(text = "Balance: ${uiState.balance}")
+            Text(text = "Sync State: ${uiState.syncState.toStr()}")
+            Text(text = "Tx Sync State: ${uiState.txSyncState.toStr()}")
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            transactionList?.let {
+                Transactions(transactionList)
             }
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TonKitTheme {
-        Greeting("Android")
+fun Transactions(transactionList: List<TonTransaction>) {
+    if (transactionList.isEmpty()) {
+        Text(text = "No transactions")
+    }
+    LazyColumn {
+        items(transactionList) {
+            Row {
+                Text(text = "Hash: ${it.hash}")
+            }
+        }
     }
 }
