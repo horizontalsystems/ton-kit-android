@@ -76,8 +76,8 @@ class TransactionManager(
         }
     }
 
-    suspend fun transactions(fromTransactionHash: String?, limit: Long): List<TonTransaction> {
-        return storage.getTransactions(fromTransactionHash, limit)
+    suspend fun transactions(fromTransactionHash: String?, type: TransactionType?, limit: Long): List<TonTransaction> {
+        return storage.getTransactions(fromTransactionHash, type, limit)
     }
 
 }

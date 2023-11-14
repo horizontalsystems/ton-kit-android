@@ -20,7 +20,7 @@ class TonKit(
         syncer.stop()
     }
 
-    suspend fun transactions(fromTransactionHash: String?, limit: Long): List<TonTransaction> {
-        return transactionManager.transactions(fromTransactionHash, limit)
+    suspend fun transactions(fromTransactionHash: String?, type: TransactionType?, limit: Long): List<TonTransaction> {
+        return transactionManager.transactions(fromTransactionHash, type, limit)
     }
 }

@@ -65,7 +65,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun loadNextTransactionsPage() {
         viewModelScope.launch(Dispatchers.IO) {
             var list = transactionList ?: listOf()
-            list += tonKit.transactions(transactionList?.lastOrNull()?.hash, 10)
+            list += tonKit.transactions(transactionList?.lastOrNull()?.hash, null, 10)
 
             transactionList = list
 
