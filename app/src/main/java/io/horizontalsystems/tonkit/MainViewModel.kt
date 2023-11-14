@@ -15,24 +15,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val watchAddress = "UQBpAeJL-VSLCigCsrgGQHCLeiEBdAuZBlbrrUGI4BVQJoPM"
 
 //    private val tonKit = TonKitFactory.create(words, passphrase)
-    private val tonKit = TonKitFactory().createWatch(watchAddress)
+    private val tonKit = TonKitFactory().createWatch(watchAddress, application)
 
     val address = tonKit.receiveAddress
 
     private var balance: String? = null
     private var syncState = tonKit.syncStateFlow.value
     private var txSyncState = tonKit.transactionsSyncStateFlow.value
+    private var transactionList: List<TonTransaction>? = null
 
     var uiState by mutableStateOf(
         MainUiState(
             balance = balance,
             syncState = syncState,
             txSyncState = txSyncState,
+            transactionList = transactionList
         )
     )
-        private set
-
-    var transactionList: List<TonTransaction>? by mutableStateOf(null)
         private set
 
     init {
@@ -53,10 +52,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        loadNextTransactionsPage()
+
         viewModelScope.launch(Dispatchers.IO) {
             tonKit.newTransactionsFlow.collect {
-                transactionList = tonKit.transactions(null, 10)
+                transactionList = null
+                loadNextTransactionsPage()
             }
+        }
+    }
+
+    fun loadNextTransactionsPage() {
+        viewModelScope.launch(Dispatchers.IO) {
+            var list = transactionList ?: listOf()
+            list += tonKit.transactions(transactionList?.lastOrNull()?.hash, 10)
+
+            transactionList = list
+
+            emitState()
         }
     }
 
@@ -87,7 +100,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             uiState = MainUiState(
                 balance = balance,
                 syncState = syncState,
-                txSyncState = txSyncState
+                txSyncState = txSyncState,
+                transactionList = transactionList
             )
         }
     }
@@ -97,6 +111,7 @@ data class MainUiState(
     val balance: String?,
     val syncState: SyncState,
     val txSyncState: SyncState,
+    val transactionList: List<TonTransaction>?,
 )
 
 fun SyncState.toStr() = when (this) {

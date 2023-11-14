@@ -1,5 +1,7 @@
 package io.horizontalsystems.tonkit
 
+import android.content.Context
+import androidx.room.Room
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -70,11 +72,11 @@ open class SyncError : Exception() {
 }
 
 class TonKitFactory() {
-    fun create(words: List<String>, passphrase: String): TonKit {
-        return create(Mnemonic.toSeed(words, passphrase))
+    fun create(words: List<String>, passphrase: String, context: Context): TonKit {
+        return create(Mnemonic.toSeed(words, passphrase), context)
     }
 
-    fun create(seed: ByteArray): TonKit {
+    fun create(seed: ByteArray, context: Context): TonKit {
         val privateKey = PrivateKeyEd25519(seed)
         val publicKey = privateKey.publicKey()
         val wallet = WalletV4R2Contract(0, publicKey)
@@ -88,18 +90,20 @@ class TonKitFactory() {
 
         checkNotNull(adnl)
 
-        val transactionManager = TransactionManager(adnl, TransactionStorage())
+        val db = Room.databaseBuilder(context, KitDatabase::class.java, "ton-kit").build()
+        val transactionManager = TransactionManager(adnl, TransactionStorage(db.tonTransactionDao()))
         val balanceManager = BalanceManager(adnl)
 
         return TonKit(transactionManager, balanceManager, receiveAddress)
     }
 
-    fun createWatch(address: String): TonKit {
+    fun createWatch(address: String, context: Context): TonKit {
         val addrStd = AddrStd.parse(address)
         val receiveAddress = MsgAddressInt.toString(addrStd, bounceable = false)
         val adnl = TonApiAdnl(addrStd)
 
-        val transactionManager = TransactionManager(adnl, TransactionStorage())
+        val db = Room.databaseBuilder(context, KitDatabase::class.java, "ton-kit").build()
+        val transactionManager = TransactionManager(adnl, TransactionStorage(db.tonTransactionDao()))
         val balanceManager = BalanceManager(adnl)
 
         return TonKit(transactionManager, balanceManager, receiveAddress)

@@ -15,6 +15,7 @@ import org.ton.lite.api.exception.LiteServerUnknownException
 import org.ton.lite.client.LiteClient
 import org.ton.lite.client.internal.TransactionId
 import org.ton.lite.client.internal.TransactionInfo
+import java.math.BigDecimal
 import java.net.URL
 
 class TonApiAdnl(private val addrStd: AddrStd) {
@@ -69,36 +70,36 @@ class TonApiAdnl(private val addrStd: AddrStd) {
         val inMsg = info.transaction.value.r1.value.inMsg.value?.value?.info
         val outMsgs = info.transaction.value.r1.value.outMsgs
 
-        val value: String? = null
-//        val transactionType: TransactionType
-//        when {
-//            outMsgs.count() == 1 -> {
-//                value = getValue(outMsgs.first().second.value.info)
-//                transactionType = TransactionType.Outgoing
-//            }
-//
-//            inMsg != null -> {
-//                value = getValue(inMsg)
-//                transactionType = TransactionType.Incoming
-//            }
-//
-//            else -> {
-//                value = null
-//                transactionType = TransactionType.Outgoing
-//            }
-//        }
+        val value: BigDecimal?
+        val transactionType: TransactionType
+        when {
+            outMsgs.count() == 1 -> {
+                value = getValue(outMsgs.first().second.value.info)
+                transactionType = TransactionType.Outgoing
+            }
+
+            inMsg != null -> {
+                value = getValue(inMsg)
+                transactionType = TransactionType.Incoming
+            }
+
+            else -> {
+                value = null
+                transactionType = TransactionType.Outgoing
+            }
+        }
 
         return TonTransaction(
             hash = info.id.hash.toHex(),
             lt = info.id.lt,
             timestamp = info.transaction.value.now.toLong(),
-            value_ = value,
-//            type = transactionType
+            value = value,
+            type = transactionType
         )
     }
 
     private fun getValue(inMsg: CommonMsgInfo) = when (inMsg) {
-        is IntMsgInfo -> inMsg.value.coins.toString()
+        is IntMsgInfo -> BigDecimal(inMsg.value.coins.toString())
         is ExtInMsgInfo -> null
         is ExtOutMsgInfo -> null
     }
@@ -107,16 +108,3 @@ class TonApiAdnl(private val addrStd: AddrStd) {
         return getFullAccountStateOrNull()?.lastTransactionId?.hash?.toHex()
     }
 }
-
-//data class TonTransaction(
-//    val hash: String,
-//    val lt: Long,
-//    val timestamp: Long,
-//    val value: String?,
-//    val type: TransactionType
-//)
-
-//enum class TransactionType {
-//    Incoming, Outgoing
-//}
-

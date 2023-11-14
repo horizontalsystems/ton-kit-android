@@ -1,40 +1,24 @@
 package io.horizontalsystems.tonkit
 
-class TransactionStorage() {
-    suspend fun getLatestTransaction(): TonTransaction? {
-//        return transactionQuery.selectLatest().executeAsOneOrNull()
-        TODO()
+class TransactionStorage(private val transactionDao: TonTransactionDao) {
+    fun getLatestTransaction(): TonTransaction? {
+        return transactionDao.getLatest()
     }
 
-    suspend fun getEarliestTransaction(): TonTransaction? {
-//        return transactionQuery.selectEarliest().executeAsOneOrNull()
-        TODO()
+    fun getEarliestTransaction(): TonTransaction? {
+        return transactionDao.getEarliest()
     }
 
-    suspend fun getTransactions(fromTransactionHash: String?, limit: Long): List<TonTransaction> {
-//        if (fromTransactionHash == null) {
-//            return transactionQuery.selectAll(limit).executeAsList()
-//        } else {
-//            val fromTransaction =
-//                transactionQuery.selectByHash(fromTransactionHash).executeAsOneOrNull() ?: return listOf()
-//            return transactionQuery.selectEarlierThan(fromTransaction.timestamp, limit).executeAsList()
-//        }
-        TODO()
+    fun getTransactions(fromTransactionHash: String?, limit: Long): List<TonTransaction> {
+        if (fromTransactionHash == null) {
+            return transactionDao.getAll(limit)
+        } else {
+            val fromTransaction = transactionDao.getByHash(fromTransactionHash) ?: return listOf()
+            return transactionDao.selectEarlierThan(fromTransaction.timestamp, fromTransaction.lt, limit)
+        }
     }
 
     fun add(transactions: List<TonTransaction>) {
-//        transactionQuery.transaction {
-//            transactions.forEach { tonTransaction ->
-//                transactionQuery.insert(
-//                    hash = tonTransaction.hash,
-//                    lt = tonTransaction.lt,
-//                    timestamp = tonTransaction.timestamp,
-//                    value_ = tonTransaction.value_
-//                )
-//            }
-//        }
-        TODO()
+        transactionDao.insertAll(transactions)
     }
-
 }
-
