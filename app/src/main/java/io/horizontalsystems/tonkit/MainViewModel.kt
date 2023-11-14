@@ -20,7 +20,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val address = tonKit.receiveAddress
 
     private var balance: String? = null
-    private var syncState = tonKit.syncStateFlow.value
+    private var syncState = tonKit.balanceSyncStateFlow.value
     private var txSyncState = tonKit.transactionsSyncStateFlow.value
     private var transactionList: List<TonTransaction>? = null
 
@@ -42,7 +42,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         viewModelScope.launch {
-            tonKit.syncStateFlow.collect {
+            tonKit.balanceSyncStateFlow.collect {
                 updateSyncState(it)
             }
         }

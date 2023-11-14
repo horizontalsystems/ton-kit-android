@@ -1,0 +1,54 @@
+package io.horizontalsystems.tonkit
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
+
+class Syncer(
+    private val transactionManager: TransactionManager,
+    private val balanceManager: BalanceManager,
+) {
+    private val _balanceSyncStateFlow = MutableStateFlow<SyncState>(SyncState.NotSynced(SyncError.NotStarted()))
+    val balanceSyncStateFlow: StateFlow<SyncState>
+        get() = _balanceSyncStateFlow
+
+    private val _transactionsSyncStateFlow = MutableStateFlow<SyncState>(SyncState.NotSynced(SyncError.NotStarted()))
+    val transactionsSyncStateFlow: StateFlow<SyncState>
+        get() = _transactionsSyncStateFlow
+
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
+
+    @OptIn(ObsoleteCoroutinesApi::class)
+    fun start() {
+        coroutineScope.launch {
+            // TON generates a new block on each shardchain and the masterchain approximately every 5 seconds
+            ticker(5 * 1000, 0).receiveAsFlow().collect {
+                sync()
+            }
+        }
+    }
+
+    private fun sync() {
+        coroutineScope.launch {
+            balanceManager.sync().collect {
+                _balanceSyncStateFlow.emit(it)
+            }
+        }
+
+        coroutineScope.launch {
+            transactionManager.sync().collect {
+                _transactionsSyncStateFlow.emit(it)
+            }
+        }
+    }
+
+    fun stop() {
+        coroutineScope.cancel()
+    }
+}

@@ -41,7 +41,9 @@ class TransactionManager(
         while (true) {
             val transactions = adnl.transactions(fromTransactionHash, fromTransactionLt, limit)
             storage.add(transactions)
-            _newTransactionsFlow.emit(transactions)
+            if (transactions.isNotEmpty()) {
+                _newTransactionsFlow.emit(transactions)
+            }
 
             if (transactions.size < limit) break
 
@@ -62,7 +64,9 @@ class TransactionManager(
                 else -> transactions.subList(0, transactions.indexOfFirst { it.hash == until })
             }
             storage.add(newTransactions)
-            _newTransactionsFlow.emit(newTransactions)
+            if (transactions.isNotEmpty()) {
+                _newTransactionsFlow.emit(transactions)
+            }
 
             if (newTransactions.size < limit) break
 
