@@ -45,7 +45,7 @@ class TonKitFactory {
             TransactionManager(adnl, TransactionStorage(db.tonTransactionDao()))
         val balanceManager = BalanceManager(adnl)
 
-        val syncer = Syncer(transactionManager, balanceManager)
+        val syncer = Syncer(transactionManager, balanceManager, ConnectionManager(context))
         return TonKit(transactionManager, balanceManager, receiveAddress, syncer)
     }
 }

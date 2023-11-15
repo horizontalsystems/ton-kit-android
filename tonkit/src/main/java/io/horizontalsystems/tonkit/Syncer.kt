@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 class Syncer(
     private val transactionManager: TransactionManager,
     private val balanceManager: BalanceManager,
+    private val connectionManager: ConnectionManager,
 ) {
     private val _balanceSyncStateFlow = MutableStateFlow<SyncState>(SyncState.NotSynced(SyncError.NotStarted()))
     val balanceSyncStateFlow: StateFlow<SyncState>
@@ -32,23 +33,38 @@ class Syncer(
                 sync()
             }
         }
-    }
-
-    private fun sync() {
-        coroutineScope.launch {
-            balanceManager.sync().collect {
-                _balanceSyncStateFlow.emit(it)
+        connectionManager.listener = object: ConnectionManager.Listener {
+            override fun onConnectionChange() {
+                sync()
             }
         }
+    }
 
-        coroutineScope.launch {
-            transactionManager.sync().collect {
-                _transactionsSyncStateFlow.emit(it)
+    @Synchronized
+    private fun sync() {
+        if (!connectionManager.isConnected) {
+            coroutineScope.launch {
+                _balanceSyncStateFlow.emit(SyncState.NotSynced(SyncError.NoNetworkConnection()))
+                _transactionsSyncStateFlow.emit(SyncState.NotSynced(SyncError.NoNetworkConnection()))
+            }
+        } else {
+            coroutineScope.launch {
+                balanceManager.sync().collect {
+                    _balanceSyncStateFlow.emit(it)
+                }
+            }
+
+            coroutineScope.launch {
+                transactionManager.sync().collect {
+                    _transactionsSyncStateFlow.emit(it)
+                }
             }
         }
     }
 
     fun stop() {
         coroutineScope.cancel()
+        connectionManager.listener = null
+        connectionManager.stop()
     }
 }
