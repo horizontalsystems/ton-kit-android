@@ -8,6 +8,7 @@ import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class Syncer(
@@ -44,19 +45,23 @@ class Syncer(
     private fun sync() {
         if (!connectionManager.isConnected) {
             coroutineScope.launch {
-                _balanceSyncStateFlow.emit(SyncState.NotSynced(SyncError.NoNetworkConnection()))
-                _transactionsSyncStateFlow.emit(SyncState.NotSynced(SyncError.NoNetworkConnection()))
+                _balanceSyncStateFlow.update {
+                    SyncState.NotSynced(SyncError.NoNetworkConnection())
+                }
+                _transactionsSyncStateFlow.update {
+                    SyncState.NotSynced(SyncError.NoNetworkConnection())
+                }
             }
         } else {
             coroutineScope.launch {
-                balanceManager.sync().collect {
-                    _balanceSyncStateFlow.emit(it)
+                balanceManager.sync().collect { syncState ->
+                    _balanceSyncStateFlow.update { syncState }
                 }
             }
 
             coroutineScope.launch {
-                transactionManager.sync().collect {
-                    _transactionsSyncStateFlow.emit(it)
+                transactionManager.sync().collect { syncState ->
+                    _transactionsSyncStateFlow.update { syncState }
                 }
             }
         }
