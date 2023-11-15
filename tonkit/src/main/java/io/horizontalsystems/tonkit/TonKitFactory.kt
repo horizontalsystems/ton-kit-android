@@ -28,7 +28,7 @@ class TonKitFactory {
 
         checkNotNull(adnl)
 
-        return create(context, adnl, receiveAddress)
+        return createInternal(context, adnl, receiveAddress, wallet, privateKey)
     }
 
     fun createWatch(address: String, context: Context): TonKit {
@@ -36,16 +36,28 @@ class TonKitFactory {
         val receiveAddress = MsgAddressInt.toString(addrStd, bounceable = false)
         val adnl = TonApiAdnl(addrStd)
 
-        return create(context, adnl, receiveAddress)
+        return createInternal(context, adnl, receiveAddress, null, null)
     }
 
-    private fun create(context: Context, adnl: TonApiAdnl, receiveAddress: String): TonKit {
+    private fun createInternal(
+        context: Context,
+        adnl: TonApiAdnl,
+        receiveAddress: String,
+        wallet: WalletV4R2Contract?,
+        privateKey: PrivateKeyEd25519?
+    ): TonKit {
         val db = Room.databaseBuilder(context, KitDatabase::class.java, "ton-kit").build()
-        val transactionManager =
-            TransactionManager(adnl, TransactionStorage(db.tonTransactionDao()))
+        val transactionStorage = TransactionStorage(db.tonTransactionDao())
+        val transactionManager = TransactionManager(adnl, transactionStorage)
         val balanceManager = BalanceManager(adnl)
 
+        val transactionSender = if (wallet != null && privateKey != null) {
+            TransactionSender(wallet, adnl, privateKey, )
+        } else {
+            null
+        }
+
         val syncer = Syncer(transactionManager, balanceManager, ConnectionManager(context))
-        return TonKit(transactionManager, balanceManager, receiveAddress, syncer)
+        return TonKit(transactionManager, balanceManager, receiveAddress, syncer, transactionSender)
     }
 }

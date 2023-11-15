@@ -12,6 +12,7 @@ import org.ton.block.ExtInMsgInfo
 import org.ton.block.ExtOutMsgInfo
 import org.ton.block.IntMsgInfo
 import org.ton.block.MsgAddressInt
+import org.ton.lite.api.LiteApi
 import org.ton.lite.api.exception.LiteServerUnknownException
 import org.ton.lite.client.LiteClient
 import org.ton.lite.client.internal.TransactionId
@@ -125,5 +126,9 @@ class TonApiAdnl(private val addrStd: AddrStd) {
 
     suspend fun getLatestTransactionHash(): String? {
         return getFullAccountStateOrNull()?.lastTransactionId?.hash?.toHex()
+    }
+
+    fun getLiteApi(): LiteApi? {
+        return liteClient?.liteApi
     }
 }
