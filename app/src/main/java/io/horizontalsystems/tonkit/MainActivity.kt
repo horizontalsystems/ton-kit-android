@@ -81,6 +81,8 @@ fun Transactions(transactionList: List<TonTransaction>, onBottomReach: () -> Uni
                 Text(text = "Hash: ${it.hash}")
                 Text(text = "Type: ${it.type}")
                 Text(text = "Value: ${it.value?.stripTrailingZeros()?.toPlainString()}")
+                Text(text = "From: ${it.src}")
+                Text(text = "To: ${it.dest}")
                 Text(text = "Date: $date")
                 Text(text = "LT: ${it.lt}")
             }

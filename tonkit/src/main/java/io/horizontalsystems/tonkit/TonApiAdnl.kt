@@ -11,6 +11,7 @@ import org.ton.block.CommonMsgInfo
 import org.ton.block.ExtInMsgInfo
 import org.ton.block.ExtOutMsgInfo
 import org.ton.block.IntMsgInfo
+import org.ton.block.MsgAddressInt
 import org.ton.lite.api.exception.LiteServerUnknownException
 import org.ton.lite.client.LiteClient
 import org.ton.lite.client.internal.TransactionId
@@ -70,21 +71,22 @@ class TonApiAdnl(private val addrStd: AddrStd) {
         val inMsg = info.transaction.value.r1.value.inMsg.value?.value?.info
         val outMsgs = info.transaction.value.r1.value.outMsgs
 
-        val value: BigDecimal?
         val transactionType: TransactionType
+        val msgInfo: CommonMsgInfo?
         when {
             outMsgs.count() == 1 -> {
-                value = getValue(outMsgs.first().second.value.info)
+                val outMsg = outMsgs.first().second.value.info
+                msgInfo = outMsg
                 transactionType = TransactionType.Outgoing
             }
 
             inMsg != null -> {
-                value = getValue(inMsg)
+                msgInfo = inMsg
                 transactionType = TransactionType.Incoming
             }
 
             else -> {
-                value = null
+                msgInfo = null
                 transactionType = TransactionType.Outgoing
             }
         }
@@ -93,15 +95,32 @@ class TonApiAdnl(private val addrStd: AddrStd) {
             hash = info.id.hash.toHex(),
             lt = info.id.lt,
             timestamp = info.transaction.value.now.toLong(),
-            value = value,
-            type = transactionType
+            value = getValue(msgInfo),
+            type = transactionType,
+            src = getSrc(msgInfo),
+            dest = getDest(msgInfo),
         )
     }
 
-    private fun getValue(inMsg: CommonMsgInfo) = when (inMsg) {
-        is IntMsgInfo -> BigDecimal(inMsg.value.coins.toString())
+    private fun getValue(msgInfo: CommonMsgInfo?) = when (msgInfo) {
+        is IntMsgInfo -> BigDecimal(msgInfo.value.coins.toString())
         is ExtInMsgInfo -> null
         is ExtOutMsgInfo -> null
+        null -> null
+    }
+
+    private fun getSrc(msgInfo: CommonMsgInfo?) = when (msgInfo) {
+        is IntMsgInfo -> MsgAddressInt.toString(msgInfo.src, bounceable = false)
+        is ExtInMsgInfo -> null
+        is ExtOutMsgInfo -> null
+        null -> null
+    }
+
+    private fun getDest(msgInfo: CommonMsgInfo?) = when (msgInfo) {
+        is IntMsgInfo -> MsgAddressInt.toString(msgInfo.dest, bounceable = false)
+        is ExtInMsgInfo -> null
+        is ExtOutMsgInfo -> null
+        null -> null
     }
 
     suspend fun getLatestTransactionHash(): String? {

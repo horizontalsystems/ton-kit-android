@@ -12,6 +12,8 @@ data class TonTransaction(
     val timestamp: Long,
     val value: BigDecimal?,
     val type: TransactionType?,
+    val src: String?,
+    val dest: String?,
 )
 
 enum class TransactionType {
