@@ -8,18 +8,19 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val words = "used ugly meat glad balance divorce inner artwork hire invest already piano".split(" ")
     private val passphrase = ""
     private val watchAddress = "UQBpAeJL-VSLCigCsrgGQHCLeiEBdAuZBlbrrUGI4BVQJoPM"
 
-//    private val tonKit = TonKitFactory.create(words, passphrase)
+//    private val tonKit = TonKitFactory().create(words, passphrase, application)
     private val tonKit = TonKitFactory().createWatch(watchAddress, application)
 
     val address = tonKit.receiveAddress
 
-    private var balance: String? = null
+    private var balance: BigDecimal? = null
     private var syncState = tonKit.balanceSyncStateFlow.value
     private var txSyncState = tonKit.transactionsSyncStateFlow.value
     private var transactionList: List<TonTransaction>? = null
@@ -89,7 +90,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         tonKit.stop()
     }
 
-    private fun updateBalance(balance: String?) {
+    private fun updateBalance(balance: BigDecimal?) {
         this.balance = balance
 
         emitState()
@@ -105,10 +106,42 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             )
         }
     }
+
+    private var sendDest: String? = null
+    private var sendAmount: BigDecimal? = null
+
+    fun setAmount(amount: String) {
+        sendAmount = amount.toBigDecimal()
+    }
+
+    fun setDest(dest: String) {
+        sendDest = dest
+    }
+
+    var sendResult by mutableStateOf("")
+        private set
+
+    fun send() {
+        viewModelScope.launch(Dispatchers.Default) {
+            sendResult = ""
+            sendResult = try {
+                val sendDest = sendDest
+                val sendAmount = sendAmount
+                checkNotNull(sendDest)
+                checkNotNull(sendAmount)
+
+                tonKit.send(sendDest, sendAmount)
+
+                "Send success"
+            } catch (t: Throwable) {
+                "Send error: $t"
+            }
+        }
+    }
 }
 
 data class MainUiState(
-    val balance: String?,
+    val balance: BigDecimal?,
     val syncState: SyncState,
     val txSyncState: SyncState,
     val transactionList: List<TonTransaction>?,

@@ -38,11 +38,11 @@ class TonApiAdnl(private val addrStd: AddrStd) {
         }
     }
 
-    suspend fun getBalance(): String? {
+    suspend fun getBalance(): BigDecimal? {
         val fullAccountState = getFullAccountStateOrNull() ?: return null
         val account = fullAccountState.account.value
         return if (account is AccountInfo) {
-            account.storage.balance.coins.toString()
+            BigDecimal(account.storage.balance.coins.toString())
         } else {
             null
         }
@@ -62,7 +62,7 @@ class TonApiAdnl(private val addrStd: AddrStd) {
         }
     }
 
-    private suspend fun getFullAccountStateOrNull() = try {
+    suspend fun getFullAccountStateOrNull() = try {
         liteClient?.getAccountState(addrStd)
     } catch (e: Exception) {
         null

@@ -24,7 +24,9 @@ class TonKit(
     }
 
     suspend fun send(dest: String, amount: BigDecimal) {
-        checkNotNull(transactionSender)
+        checkNotNull(transactionSender) {
+            "Sending is not available for watch account"
+        }
 
         transactionSender.send(dest, amount)
     }
