@@ -3,6 +3,7 @@ package io.horizontalsystems.tonkit.tonconnect
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
+import androidx.room.Query
 
 @Dao
 interface KeyValueDao {
@@ -10,14 +11,13 @@ interface KeyValueDao {
         save(KeyValue(k, v))
     }
 
-    fun get(k: String): String? {
-        TODO("Not yet implemented")
-    }
+    fun get(k: String) = getByKey(k)?.value
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun save(keyValue: KeyValue)
 
 
-    fun get(k:String)
+    @Query("SELECT * FROM KeyValue WHERE `key` = :k")
+    fun getByKey(k: String): KeyValue?
 
 }
