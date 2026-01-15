@@ -6,7 +6,6 @@ import io.horizontalsystems.tonkit.Address
 import io.horizontalsystems.tonkit.FriendlyAddress
 import io.horizontalsystems.tonkit.api.TonApi
 import io.horizontalsystems.tonkit.api.TonApiListener
-import io.horizontalsystems.tonkit.models.Account
 import io.horizontalsystems.tonkit.models.Event
 import io.horizontalsystems.tonkit.models.EventInfo
 import io.horizontalsystems.tonkit.models.Jetton
@@ -36,6 +35,7 @@ class TonKit(
     private val transactionSender: TransactionSender?,
     val network: Network,
     private val transactionSigner: TransactionSigner,
+    private val tonWallet: TonWallet,
 ) {
     val receiveAddress get() = address
 
@@ -159,13 +159,13 @@ class TonKit(
         ).awaitAll()
     }
 
-    suspend fun sign(request: SendRequestEntity, tonWallet: TonWallet): String {
+    suspend fun sign(request: SendRequestEntity): String {
         check(tonWallet is TonWallet.FullAccess)
 
         return transactionSigner.sign(request, tonWallet)
     }
 
-    suspend fun getDetails(request: SendRequestEntity, tonWallet: TonWallet): Event {
+    suspend fun getDetails(request: SendRequestEntity): Event {
         check(tonWallet is TonWallet.FullAccess)
 
         return transactionSigner.getDetails(request, tonWallet)
@@ -236,7 +236,8 @@ class TonKit(
                 eventManager,
                 transactionSender,
                 network,
-                transactionSigner
+                transactionSigner,
+                tonWallet
             )
         }
 

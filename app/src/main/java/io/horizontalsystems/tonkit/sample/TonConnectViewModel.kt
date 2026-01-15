@@ -51,7 +51,7 @@ class TonConnectViewModel : ViewModel() {
     private suspend fun handleSendRequest(request: SendRequestEntity) {
         if (handledRequests.contains(request.id)) return
 
-        val event = tonKit.getDetails(request, App.tonWallet)
+        val event = tonKit.getDetails(request)
 
         pendingSendRequest = Pair(request, event)
         Log.e("AAA", "handleSendRequest")
@@ -76,7 +76,7 @@ class TonConnectViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.Default) {
             val (request, _) = pendingSendRequest!!
 
-            val boc = tonKit.sign(request, App.tonWallet)
+            val boc = tonKit.sign(request)
 
             tonKit.send(boc)
 
