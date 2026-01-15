@@ -100,6 +100,11 @@ class TonKit(
         return eventManager.tagTokens()
     }
 
+    suspend fun estimateFee(boc: String): BigInteger {
+        return transactionSender?.estimateFee(boc)
+            ?: throw WalletError.WatchOnly
+    }
+
     suspend fun estimateFee(
         recipient: FriendlyAddress,
         amount: SendAmount,

@@ -27,6 +27,12 @@ class TransactionSender(
         System.currentTimeMillis() / 1000 + ttl
     }
 
+    suspend fun estimateFee(boc: String): BigInteger {
+        val params = listOf(EmulateMessageToWalletRequestParamsInner(sender.toRaw(), 1_000_000_000))
+
+        return api.estimateFee(boc, params)
+    }
+
     suspend fun estimateFee(recipient: FriendlyAddress, amount: TonKit.SendAmount, comment: String?): BigInteger {
         val value: BigInteger
         val isMax: Boolean
