@@ -10,4 +10,6 @@ add_library(libsodium SHARED sodium_lib.cpp)
 
 find_library(log-lib log)
 
+target_link_options(libsodium PRIVATE "-Wl,--build-id=none")
+
 target_link_libraries(libsodium sodium::sodium ${log-lib})
