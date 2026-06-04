@@ -23,6 +23,7 @@ import org.ton.cell.buildCell
 import org.ton.contract.SmartContract
 import org.ton.contract.wallet.WalletTransfer
 import org.ton.tlb.CellRef
+import org.ton.tlb.asRef
 import org.ton.tlb.constructor.AnyTlbConstructor
 import org.ton.tlb.storeTlb
 import java.math.BigInteger
@@ -83,7 +84,7 @@ abstract class BaseWalletContract(
             val body = if (gift.body == null) {
                 Either.of<Cell, CellRef<Cell>>(Cell.empty(), null)
             } else {
-                Either.of<Cell, CellRef<Cell>>(null, CellRef(gift.body!!))
+                Either.of<Cell, CellRef<Cell>>(null, gift.body!!.asRef(AnyTlbConstructor))
             }
 
             return MessageRelaxed(
