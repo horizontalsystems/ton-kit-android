@@ -206,17 +206,39 @@ class TonKit(
                 .build()
         }
 
+        private val authorizedClients = mutableMapOf<String, OkHttpClient>()
+
+        // Requests without a key fall under the tonapi.io anonymous tier, which is
+        // rate limited per IP and fails for users behind shared IPs (VPN, CGNAT).
+        @Synchronized
+        private fun okHttpClient(apiKey: String?): OkHttpClient {
+            if (apiKey.isNullOrBlank()) return okHttpClient
+
+            return authorizedClients.getOrPut(apiKey) {
+                okHttpClient.newBuilder()
+                    .addInterceptor { chain ->
+                        val request = chain.request().newBuilder()
+                            .header("Authorization", "Bearer $apiKey")
+                            .build()
+                        chain.proceed(request)
+                    }
+                    .build()
+            }
+        }
+
         fun getInstance(
             tonWallet: TonWallet,
             network: Network,
             context: Context,
             walletId: String,
+            apiKey: String? = null,
         ): TonKit {
             val address = tonWallet.address
 
             val database = KitDatabase.getInstance(context, "${walletId}-${network.name}")
 
-            val api = getTonApi(network)
+            val client = okHttpClient(apiKey)
+            val api = TonApi(network, client)
             val transactionSigner = getTransactionSigner(api)
 
             val accountManager = AccountManager(address, api, database.accountDao())
@@ -231,7 +253,7 @@ class TonKit(
                 is TonWallet.WatchOnly -> null
             }
 
-            val apiListener = TonApiListener(network, okHttpClient)
+            val apiListener = TonApiListener(network, client)
 
             return TonKit(
                 address,
@@ -246,11 +268,12 @@ class TonKit(
             )
         }
 
-        fun getTonApi(network: Network) = TonApi(network, okHttpClient)
+        fun getTonApi(network: Network, apiKey: String? = null) =
+            TonApi(network, okHttpClient(apiKey))
         fun getTransactionSigner(api: TonApi) = TransactionSigner(api)
 
-        suspend fun getJetton(network: Network, address: Address): Jetton {
-            return getTonApi(network).getJettonInfo(address)
+        suspend fun getJetton(network: Network, address: Address, apiKey: String? = null): Jetton {
+            return getTonApi(network, apiKey).getJettonInfo(address)
         }
 
         fun validateAddress(address: String) {
